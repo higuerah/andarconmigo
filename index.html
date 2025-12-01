@@ -5,8 +5,8 @@
     <title>Código QR de Realidad Aumentada</title>
     <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+    
     <style>
-        /* Estilos básicos para que la cámara ocupe toda la pantalla */
         body { margin: 0; overflow: hidden; }
     </style>
 </head>
@@ -17,9 +17,10 @@
         <video id="videoElement" src="andarconmigo.mp4" preload="auto" loop="true" autoplay playsinline webkit-playsinline></video>
     </a-assets>
 
-    <a-scene embedded arjs='sourceType: webcam; detectionMode: mono_and_matrix; matrixCodeType: 3x3;'>
+    <a-scene embedded arjs='sourceType: webcam;'>
 
-        <a-marker type='barcode' value='5'>
+        <a-marker preset='box'> 
+            
             <a-video src="#videoElement" width="2" height="1.2" position="0 0 0" rotation="-90 0 0"></a-video>
         </a-marker>
 
@@ -28,12 +29,14 @@
     </a-scene>
     
     <script>
+        // Reproduce el video cuando el marcador es visible
         document.querySelector('a-scene').addEventListener('markerFound', function() {
             var video = document.querySelector('#videoElement');
             if (video.paused) {
                 video.play();
             }
         });
+        // Pausa el video cuando el marcador se pierde
         document.querySelector('a-scene').addEventListener('markerLost', function() {
             var video = document.querySelector('#videoElement');
             video.pause();
@@ -41,3 +44,4 @@
     </script>
 </body>
 </html>
+
