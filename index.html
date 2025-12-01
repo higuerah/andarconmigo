@@ -2,43 +2,36 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Código QR de Realidad Aumentada</title>
+    <title>Video AR Simple</title>
     <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
-    
-    <style>
-        body { margin: 0; overflow: hidden; }
-    </style>
 </head>
-
-<body style='margin : 0px; overflow: hidden;'>
-
-    <a-assets>
-        <video id="videoElement" src="video.mp4" preload="auto" loop="true" autoplay playsinline webkit-playsinline></video>
-    </a-assets>
+<body>
 
     <a-scene embedded arjs='sourceType: webcam;'>
 
+        <a-assets>
+            <video id="vid" src="video.mp4" preload="auto" loop="true" playsinline webkit-playsinline></video>
+        </a-assets>
+
         <a-marker preset='letterA'> 
-            
-            <a-video src="#videoElement" width="2" height="1.2" position="0 0 0" rotation="-90 0 0"></a-video>
+            <a-video src="#vid" width="2" height="1.5" position="0 0 0" rotation="-90 0 0"></a-video>
         </a-marker>
 
         <a-entity camera></a-entity>
 
     </a-scene>
-    
+
     <script>
-        // Reproduce el video cuando el marcador es visible
-        document.querySelector('a-scene').addEventListener('markerFound', function() {
-            var video = document.querySelector('#videoElement');
+        // Script de control de reproducción
+        document.querySelector('a-marker').addEventListener('markerFound', function() {
+            var video = document.querySelector('#vid');
             if (video.paused) {
                 video.play();
             }
         });
-        // Pausa el video cuando el marcador se pierde
-        document.querySelector('a-scene').addEventListener('markerLost', function() {
-            var video = document.querySelector('#videoElement');
+        document.querySelector('a-marker').addEventListener('markerLost', function() {
+            var video = document.querySelector('#vid');
             video.pause();
         });
     </script>
