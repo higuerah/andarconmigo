@@ -41,7 +41,7 @@
   <!-- Overlay inicial para permitir autoplay del video en móviles -->
   <div id="starter">
     <button id="startBtn">Tocar para iniciar AR</button>
-    <div id="hint">Permite la cámara cuando el navegador lo pida y apunta al marcador (cuadro con micrófono).</div>
+    <div id="hint">Apunta al corazon.</div>
   </div>
 
   <!-- Escena A-Frame con AR.js -->
@@ -50,7 +50,7 @@
       <!-- Asegúrate de que video.mp4 esté en la misma carpeta que este HTML -->
       <video id="vid" src="video.mp4" preload="auto" loop playsinline webkit-playsinline crossorigin="anonymous"></video>
       <!-- Opcional: textura o referencia -->
-      <img id="ref" src="microfono.png" alt="marcador referencia" />
+      <img id="ref" src="pattern-corazon.png" alt="marcador referencia" />
     </a-assets>
 
     <!-- Marcador personalizado: usar tu archivo pattern-marker.patt -->
@@ -111,5 +111,6 @@
 
 </body>
 </html>
+
 
 
