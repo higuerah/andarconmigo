@@ -1,43 +1,115 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-    <meta charset="utf-8">
-    <title>Video AR</title>
+  <meta charset="utf-8" />
+  <title>Video AR con marcador personalizado</title>
 
-    <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+  <!-- A-Frame y AR.js -->
+  <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <style>
+    body { margin:0; font-family: sans-serif; background:#111; color:#fff; }
+    /* Overlay para forzar interacción en móvil (autoplay) */
+    #starter {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.6);
+      z-index: 9999;
+      flex-direction: column;
+    }
+    #starter button {
+      background:#2d9cdb;
+      border:none;
+      padding: 14px 20px;
+      border-radius: 8px;
+      font-size: 18px;
+      color:white;
+      cursor:pointer;
+    }
+    #hint { margin-top: 10px; color:#ddd; font-size:14px; text-align:center; max-width:320px; }
+    /* Ajustes del canvas */
+    a-scene { width:100vw; height:100vh; }
+  </style>
 </head>
-<body style="margin: 0; overflow: hidden">
+<body>
 
-<a-scene embedded vr-mode-ui="enabled: false" arjs="sourceType: webcam;">
+  <!-- Overlay inicial para permitir autoplay del video en móviles -->
+  <div id="starter">
+    <button id="startBtn">Tocar para iniciar AR</button>
+    <div id="hint">Permite la cámara cuando el navegador lo pida y apunta al marcador (cuadro con micrófono).</div>
+  </div>
 
+  <!-- Escena A-Frame con AR.js -->
+  <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" vr-mode-ui="enabled: false">
     <a-assets>
-        <video id="vid" src="video.mp4" preload="auto" loop="true"
-            playsinline webkit-playsinline></video>
+      <!-- Asegúrate de que video.mp4 esté en la misma carpeta que este HTML -->
+      <video id="vid" src="video.mp4" preload="auto" loop playsinline webkit-playsinline crossorigin="anonymous"></video>
+      <!-- Opcional: textura o referencia -->
+      <img id="ref" src="microfono.png" alt="marcador referencia" />
     </a-assets>
 
-    <!-- NUEVO: usamos tu patrón -->
-    <a-marker type="pattern" url="patt/microfono.patt">
-        <a-video src="#vid" width="2" height="1.5"
-                 position="0 0 0"
-                 rotation="-90 0 0">
-        </a-video>
+    <!-- Marcador personalizado: usar tu archivo pattern-marker.patt -->
+    <a-marker type="pattern" url="pattern-marker.patt">
+      <!-- Coloca el video como plano; rotación para que se vea "flotante" sobre el marcador -->
+      <a-video id="arVideo" src="#vid" width="1.8" height="1.1" position="0 0 0" rotation="-90 0 0" visible="true"></a-video>
+      <!-- Opcional: un contorno para debug -->
+      <a-box position="0 0 0" rotation="-90 0 0" depth="0.01" height="1.1" width="1.8" material="opacity:0.0"></a-box>
     </a-marker>
 
+    <!-- Cámara -->
     <a-entity camera></a-entity>
+  </a-scene>
 
-</a-scene>
-
-<script>
+  <script>
+    // Referencias
+    const startBtn = document.getElementById('startBtn');
+    const starter = document.getElementById('starter');
+    const video = document.getElementById('vid');
+    const arVideo = document.getElementById('arVideo');
     const marker = document.querySelector('a-marker');
-    const vid = document.querySelector('#vid');
 
-    marker.addEventListener('markerFound', () => vid.play());
-    marker.addEventListener('markerLost', () => vid.pause());
-</script>
+    // Habilita reproducción del video después de interacción del usuario
+    startBtn.addEventListener('click', async () => {
+      try {
+        // Intentamos reproducir el video para "desbloquear" autoplay en móviles
+        await video.play().catch(e => console.log('play catch:', e));
+      } catch (err) {
+        console.warn('No se pudo iniciar reproducción automática:', err);
+      }
+
+      // Ocultamos overlay para mostrar la escena
+      starter.style.display = 'none';
+
+      // NOTA: El navegador pedirá permiso de cámara al ejecutar la escena AR
+    });
+
+    // Reproducir/pausar según encuentre el marcador
+    if (marker) {
+      marker.addEventListener('markerFound', () => {
+        console.log('markerFound');
+        // algunos navegadores requieren interacción: si está pausado, intenta reproducir
+        if (video.paused) video.play().catch(e => console.warn('video play error', e));
+      });
+
+      marker.addEventListener('markerLost', () => {
+        console.log('markerLost');
+        video.pause();
+      });
+    } else {
+      console.warn('No se detectó <a-marker>. ¿Está pattern-marker.patt en la misma carpeta?');
+    }
+
+    // Mensajes de debugging en consola (útil si algo falla)
+    video.addEventListener('error', (e) => console.error('Video error', e));
+    video.addEventListener('loadeddata', () => console.log('Video cargado OK'));
+  </script>
 
 </body>
 </html>
-
 
 
