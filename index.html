@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>AR Holograma Ultra</title>
+    <title>AR Video Escalable</title>
 
     <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
@@ -11,24 +11,15 @@
         #starter {
             position: fixed;
             inset: 0;
-            background: black;
+            background: white;
             display: flex;
             align-items: center;
             justify-content: center;
             z-index: 9999;
-            flex-direction: column;
-            color: white;
-            font-family: sans-serif;
         }
-        #starter button {
-            padding: 14px 22px;
-            background: #00c2ff;
-            border: none;
-            border-radius: 10px;
+        button {
+            padding: 15px 25px;
             font-size: 18px;
-            color: black;
-            cursor: pointer;
-            font-weight: bold;
         }
     </style>
 </head>
@@ -36,88 +27,61 @@
 <body>
 
 <div id="starter">
-    <button id="startBtn">Toca para activar el holograma, bebé 💙</button>
-    <p style="margin-top:10px; font-size:14px;">Apunta al corazón</p>
+    <button id="startBtn">Toca para iniciar</button>
 </div>
 
-<a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" renderer="logarithmicDepthBuffer: true;">
+<a-scene
+    embedded
+    arjs="sourceType: webcam; detectionMode: mono; patternRatio: 0.90;">
     
     <a-assets>
-        <video id="vid" src="video.mp4" preload="auto" loop playsinline webkit-playsinline></video>
+        <video id="vid" src="video.mp4"
+               preload="auto" webkit-playsinline playsinline></video>
     </a-assets>
 
-    <!-- Marcador personalizado -->
-    <a-marker type="pattern" url="pattern-marker.patt">
-
-        <!-- HOLOGRAMA ULTRA CARGADO -->
-        <a-video 
-            id="arVideo"
-            src="#vid"
-            width="4"
-            height="3"
-            rotation="-90 0 0"
-            position="0 0 0"
-            opacity="0"
-            material="shader: standard; transparent: true; opacity: 0.0; emissive: #00eaff; emissiveIntensity: 0.3;"
-        ></a-video>
-
-        <!-- Aura holográfica -->
-        <a-ring 
-            radius-inner="0.5"
-            radius-outer="1.2"
-            rotation="-90 0 0"
-            color="#00eaff"
-            opacity="0.35"
-            position="0 -0.01 0"
-        ></a-ring>
+    <!-- El marcador controla el tamaño. NO fijamos dimensiones absolutas aquí -->
+    <a-marker
+        type="pattern"
+        url="pattern-marker.patt">
+        
+        <!-- Contenedor que escala con el marcador -->
+        <a-entity id="videoContainer" scale="1 1 1">
+            <a-video 
+                src="#vid"
+                rotation="-90 0 0"
+                position="0 0 0">
+            </a-video>
+        </a-entity>
 
     </a-marker>
 
     <a-entity camera></a-entity>
-
 </a-scene>
 
 <script>
     const btn = document.querySelector('#startBtn');
     const overlay = document.querySelector('#starter');
     const video = document.querySelector('#vid');
-    const arVideo = document.querySelector('#arVideo');
     const marker = document.querySelector('a-marker');
 
-    // Activa audio y AR
+    // Evita autoplay hasta que detecte marcador
+    video.pause();
+    video.muted = false;
+
     btn.addEventListener('click', async () => {
         overlay.style.display = "none";
         try { await video.play(); video.pause(); } catch(e){}
     });
 
-    // Fade suave
-    const fadeIn = () => {
-        let o = 0;
-        const i = setInterval(() => {
-            o += 0.05;
-            if (o >= 1) { o = 1; clearInterval(i); }
-            arVideo.setAttribute("opacity", o);
-        }, 30);
-    };
-
-    const fadeOut = () => {
-        let o = 1;
-        const i = setInterval(() => {
-            o -= 0.05;
-            if (o <= 0) { o = 0; clearInterval(i); }
-            arVideo.setAttribute("opacity", o);
-        }, 30);
-    };
-
-    // Video según el marcador
+    // Cuando aparece el marcador → play
     marker.addEventListener('markerFound', () => {
+        video.currentTime = 0; 
         video.play();
-        fadeIn();
     });
 
+    // Cuando se pierde el marcador → pausa
     marker.addEventListener('markerLost', () => {
-        fadeOut();
-        setTimeout(() => video.pause(), 400);
+        video.pause();
     });
 </script>
 
