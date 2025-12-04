@@ -1,84 +1,147 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-    <meta charset="utf-8">
-    <title>AR Video</title>
+  <meta charset="utf-8" />
+  <title>AR Holograma Curvo</title>
 
-    <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+  <!-- A-Frame + AR.js -->
+  <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
 
-    <style>
-        #starter {
-            position: fixed;
-            inset: 0;
-            background: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-        }
-    </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <style>
+    body { margin:0; background:#000; }
+
+    /* Overlay para desbloquear autoplay */
+    #starter {
+      position: fixed;
+      inset: 0;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      flex-direction: column;
+      color: white;
+      font-family: sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+    #starter button {
+      padding: 15px 22px;
+      border-radius: 10px;
+      border: none;
+      background: #0ff;
+      color: #000;
+      font-size: 18px;
+      cursor: pointer;
+      font-weight: bold;
+      box-shadow: 0 0 12px #0ff;
+    }
+    #starter p { opacity: 0.8; font-size: 14px; margin-top: 10px; }
+  </style>
 </head>
 
 <body>
 
+<!-- Overlay inicial -->
 <div id="starter">
-    <button id="startBtn">Toca la pantalla para activar el video bebé</button>
+  <button id="startBtn">Toca para iniciar AR 💙</button>
+  <p>Apunta la cámara al corazón, bebé 💘</p>
 </div>
 
-<a-scene embedded arjs="sourceType: webcam;">
-    <a-assets>
-        <video id="vid" 
-               src="video.mp4" 
-               preload="auto" 
-               loop 
-               playsinline 
-               webkit-playsinline 
-               muted>
-        </video>
-    </a-assets>
+<!-- Escena AR -->
+<a-scene
+    embedded
+    arjs="sourceType: webcam; debugUIEnabled: false;"
+    vr-mode-ui="enabled: false"
+    renderer="colorManagement: true; physicallyCorrectLights: true;"
+>
+  <a-assets>
+    <video id="vid" src="video.mp4" preload="auto" loop playsinline webkit-playsinline></video>
 
-    <a-marker type="pattern" url="pattern-marker.patt">
-        <a-video src="#vid" width="2" height="1.5" rotation="-90 0 0"></a-video>
-    </a-marker>
+    <!-- Textura holográfica para brillo -->
+    <img id="holo" src="https://i.imgur.com/yiZ5Flt.png">
+  </a-assets>
 
-    <a-entity camera></a-entity>
+  <!-- MARCADOR -->
+  <a-marker type="pattern" url="pattern-marker.patt">
+
+    <!-- PANEL CURVO FUTURISTA -->
+    <a-entity id="curvedScreen" position="0 0 0" rotation="-90 0 0" visible="false">
+
+      <!-- Curvatura -->
+      <a-entity
+        geometry="primitive: cylinder; radius: 1; height: 1.5; thetaLength: 120; openEnded: true;"
+        material="shader: flat; src: #vid; side: double; opacity: 1;"
+        position="0 0 0"
+        rotation="0 180 0">
+      </a-entity>
+
+      <!-- Glow futurista -->
+      <a-ring
+        radius-inner="1.05"
+        radius-outer="1.25"
+        rotation="90 0 0"
+        position="0 -0.76 0"
+        material="shader: flat; src: #holo; opacity: 0.25;">
+      </a-ring>
+
+    </a-entity>
+
+  </a-marker>
+
+  <a-entity camera></a-entity>
 </a-scene>
 
+
 <script>
-    const btn = document.querySelector('#startBtn');
-    const overlay = document.querySelector('#starter');
-    const video = document.querySelector('#vid');
+  const overlay = document.querySelector("#starter");
+  const btn = document.querySelector("#startBtn");
+  const video = document.querySelector("#vid");
+  const curved = document.querySelector("#curvedScreen");
+  const marker = document.querySelector("a-marker");
 
-    // Evitamos que el video inicie solo accidentalmente
+  // 🌟 Fade de 0.5 segundos
+  function fadeIn(el) {
+    el.setAttribute("visible", true);
+    el.setAttribute("animation__fadein", {
+      property: "material.opacity",
+      to: 1,
+      dur: 500,
+      easing: "easeOutQuad"
+    });
+  }
+
+  function fadeOut(el) {
+    el.setAttribute("animation__fadeout", {
+      property: "material.opacity",
+      to: 0,
+      dur: 500,
+      easing: "easeOutQuad"
+    });
+    setTimeout(() => el.setAttribute("visible", false), 500);
+  }
+
+  // 🔓 Desbloquear autoplay
+  btn.addEventListener("click", async () => {
+    overlay.style.display = "none";
+    try { await video.play(); video.pause(); } catch(e) { console.log(e); }
+  });
+
+  // 🔘 Cuando encuentre el marcador
+  marker.addEventListener("markerFound", () => {
+    video.play();
+    fadeIn(curved);
+  });
+
+  // 🔘 Cuando se pierda el marcador
+  marker.addEventListener("markerLost", () => {
     video.pause();
-    video.muted = false; // desmute cuando ya puede reproducirse
-
-    let readyToPlay = false;
-
-    btn.addEventListener('click', () => {
-        overlay.style.display = "none";
-        readyToPlay = true; // marcamos que ya se puede reproducir más adelante
-    });
-
-    const marker = document.querySelector('a-marker');
-
-    marker.addEventListener('markerFound', async () => {
-        if (readyToPlay) {
-            try {
-                await video.play();
-            } catch (e) {
-                console.warn("Error al reproducir el video:", e);
-            }
-        }
-    });
-
-    marker.addEventListener('markerLost', () => {
-        video.pause();
-    });
+    fadeOut(curved);
+  });
 </script>
 
 </body>
 </html>
-
-
