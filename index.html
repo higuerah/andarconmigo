@@ -2,120 +2,112 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>AR Collar - Marco rojo + Partículas</title>
+  <title>AR Collar - Video Fade</title>
 
   <!-- A-Frame -->
   <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
 
-  <!-- AR.js (aframe build) -->
+  <!-- AR.js -->
   <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
-
-  <!-- Particle system component (necesario) -->
-  <script src="https://cdn.jsdelivr.net/gh/IdeaSpaceVR/aframe-particle-system-component@3.0.0/dist/aframe-particle-system-component.min.js"></script>
 
   <style>
     body { margin: 0; background: #000; }
+
     #starter {
-      position: fixed; inset:0;
-      display:flex; align-items:center; justify-content:center;
-      z-index:9999; background:#000; color:#fff; flex-direction:column;
+      position: fixed; inset: 0;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      color: #fff;
     }
+
     #startBtn {
-      padding:12px 18px; border-radius:8px; border:none; background:#ff3366; color:#fff; font-weight:700;
+      padding: 12px 18px;
+      background: #ff3366;
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      font-weight: bold;
+    }
+
+    /* Fade suave del video */
+    #videoPlane {
+      transition: opacity 0.5s ease-in-out;
+      opacity: 0; /* inicia oculto */
     }
   </style>
 </head>
+
 <body>
 
-  <div id="starter">
-    <button id="startBtn">Toca para activar la experiencia</button>
-    <p style="opacity:.8; margin-top:10px;">Apunta al collar</p>
-  </div>
+<div id="starter">
+  <button id="startBtn">Toca para iniciar la experiencia</button>
+  <p style="margin-top:10px; opacity:.7;">Apunta al collar</p>
+</div>
 
-  <a-scene embedded vr-mode-ui="enabled: false" arjs="sourceType: webcam; debugUIEnabled: false;">
+<a-scene embedded vr-mode-ui="enabled:false" arjs="sourceType: webcam; debugUIEnabled: false;">
 
-    <!-- ASSETS: primero que todo -->
-    <a-assets>
-      <video id="vid" src="video.mp4" preload="auto" loop playsinline webkit-playsinline crossorigin="anonymous"></video>
-    </a-assets>
+  <!-- ASSETS -->
+  <a-assets>
+    <video id="vid" src="video.mp4" preload="auto" loop playsinline webkit-playsinline crossorigin="anonymous"></video>
+  </a-assets>
 
-    <!-- MARKER (usa tu pattern ya subido) -->
-    <a-marker type="pattern" url="pattern-marker.patt"
-              smooth="true" smoothCount="10" smoothTolerance="0.01" smoothThreshold="5">
+  <!-- MARKER -->
+  <a-marker type="pattern" url="pattern-marker.patt"
+            smooth="true" smoothCount="10" smoothTolerance="0.01" smoothThreshold="5">
 
-      <!-- contenedor que mantiene todo junto -->
-      <a-entity id="container" rotation="-90 0 0">
+    <!-- contenedor AR -->
+    <a-entity rotation="-90 0 0">
 
-        <!-- MARCO EXTERNO ROJO (detrás) -->
-        <a-plane
-          width="1.12"
-          height="0.70"
-          position="0 0 -0.03"
-          material="shader: flat; color: #b3002d;">
-        </a-plane>
+      <!-- VIDEO - sin marco y sin partículas -->
+      <a-video
+        id="videoPlane"
+        src="#vid"
+        width="1"
+        height="0.56"
+        position="0 0 0"
+        material="shader: flat;">
+      </a-video>
 
-        <!-- CAPA NEGRA INTERNA para enmarcar el video -->
-        <a-plane
-          width="1.06"
-          height="0.64"
-          position="0 0 -0.015"
-          material="shader: flat; color: #000;">
-        </a-plane>
+    </a-entity>
+  </a-marker>
 
-        <!-- VIDEO: arriba de las capas (z positiva) para que se vea -->
-        <a-video
-          id="videoPlane"
-          src="#vid"
-          width="1.02"
-          height="0.60"
-          position="0 0 0"
-          material="shader: flat; transparent: false;">
-        </a-video>
-
-        <!-- PARTÍCULAS ROJAS ALREDEDOR (por fuera del marco) -->
-        <a-entity position="0 0 0.12"
-          particle-system="
-            preset: dust;
-            particleCount: 120;
-            color: #ff4d66, #ffccd8;
-            size: 0.02;
-            opacity: 0.6;
-            randomize: true;
-            maxAge: 2;
-            positionSpread: 0.8 0.6 0.8;">
-        </a-entity>
-
-      </a-entity>
-
-    </a-marker>
-
-    <a-entity camera></a-entity>
-  </a-scene>
+  <a-entity camera></a-entity>
+</a-scene>
 
 <script>
-  const startBtn = document.getElementById('startBtn');
-  const starter = document.getElementById('starter');
-  const video = document.getElementById('vid');
-  const marker = document.querySelector('a-marker');
+  const startBtn = document.getElementById("startBtn");
+  const starter = document.getElementById("starter");
+  const video = document.getElementById("vid");
+  const marker = document.querySelector("a-marker");
+  const videoPlane = document.querySelector("#videoPlane");
 
-  // desbloquear reproducción en móviles (sin audio hasta markerFound)
-  startBtn.addEventListener('click', async () => {
-    starter.style.display = 'none';
-    try { await video.play(); video.pause(); } catch(e){ console.warn(e); }
+  // Activar permisos del video
+  startBtn.addEventListener("click", async () => {
+    starter.style.display = "none";
+
+    // Hack para desbloquear reproducción en iPhone
+    try {
+      await video.play();
+      video.pause();
+    } catch (e) {}
   });
 
-  marker.addEventListener('markerFound', () => {
-    // arrancar desde 0 por si quieres
+  // Cuando encuentra el marcador
+  marker.addEventListener("markerFound", () => {
     video.currentTime = 0;
-    video.play().catch(e => console.warn('play error', e));
+    video.play();
+    videoPlane.setAttribute("opacity", 1);  // Fade in
   });
 
-  marker.addEventListener('markerLost', () => {
+  // Cuando pierde el marcador
+  marker.addEventListener("markerLost", () => {
     video.pause();
+    videoPlane.setAttribute("opacity", 0); // Fade out
   });
-
-  // Console helper si algo no carga
-  video.addEventListener('error', e => console.error('Video error', e));
 </script>
 
 </body>
