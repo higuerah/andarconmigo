@@ -1,114 +1,145 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/ar-js-org@3.4.3/three.js/build/ar-threex.min.js"></script>
-    <style>
-      body, html {
-        margin: 0;
-        overflow: hidden;
-        background: black;
-      }
-      #videoElement {
-        display: none;
-      }
-    </style>
-  </head>
-  <body>
-    <video id="videoElement" playsinline webkit-playsinline></video>
-    <script>
-      let scene, camera, renderer, clock;
-      let markerRoot, arToolkitSource, arToolkitContext;
-      let videoMesh;
+<head>
+  <meta charset="utf-8">
+  <title>Para ti</title>
 
-      init();
-      animate();
+  <!-- A-Frame -->
+  <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
 
-      function init() {
-        scene = new THREE.Scene();
-        camera = new THREE.Camera();
-        scene.add(camera);
+  <!-- AR.js -->
+  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
 
-        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
-        document.body.appendChild(renderer.domElement);
+  <style>
+    body { margin: 0; background: #000; }
 
-        clock = new THREE.Clock();
+    #starter {
+      position: fixed; inset: 0;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      color: #fff;
+    }
 
-        arToolkitSource = new THREEx.ArToolkitSource({ sourceType: "webcam" });
-        arToolkitSource.init(function () {
-          setTimeout(() => onResize(), 500);
-        });
+    #startBtn {
+      padding: 12px 18px;
+      background: #ff3366;
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      font-weight: bold;
+    }
 
-        window.addEventListener("resize", onResize);
+    #videoPlane {
+      transition: opacity 0.5s ease-in-out;
+      opacity: 0;
+    }
+  </style>
+</head>
 
-        arToolkitContext = new THREEx.ArToolkitContext({
-          cameraParametersUrl: "https://cdn.jsdelivr.net/npm/ar-js-org@3.4.3/three.js/data/camera_para.dat",
-          detectionMode: "mono",
-          maxDetectionRate: 60,
-        });
+<body>
 
-        arToolkitContext.init(function () {
-          camera.projectionMatrix.copy(arToolkitContext.getProjectionMatrix());
-        });
+<div id="starter">
+  <button id="startBtn">Hay tanto que quiero contarte...</button>
+  <p style="margin-top:10px; opacity:.7;">Apunta al collar bebé ❤️</p>
+</div>
 
-        markerRoot = new THREE.Group();
-        scene.add(markerRoot);
+<a-scene embedded vr-mode-ui="enabled:false" arjs="sourceType: webcam; debugUIEnabled: false;">
 
-        let markerControls = new THREEx.ArMarkerControls(arToolkitContext, markerRoot, {
-          type: "pattern",
-          patternUrl: "pattern-marker.patt",
-          smooth: true,
-        });
+  <a-assets>
+    <video id="vid" src="video.mp4" preload="auto" loop playsinline webkit-playsinline crossorigin="anonymous"></video>
+  </a-assets>
 
-        const video = document.createElement("video");
-        video.src = "video.mp4"; // cambia a tu video final
-        video.autoplay = true;
-        video.loop = true;
-        video.muted = false;
-        video.playsinline = true;
+  <!-- MARCADOR -->
+  <a-marker id="marker" type="pattern" url="pattern-marker.patt"
+            smooth="true" smoothCount="10" smoothTolerance="0.01" smoothThreshold="5">
 
-        const texture = new THREE.VideoTexture(video);
-        texture.minFilter = THREE.LinearFilter;
-        texture.magFilter = THREE.LinearFilter;
+    <a-entity id="container" rotation="-90 0 0">
 
-        const geometry = new THREE.PlaneGeometry(1, 0.56);
-        const material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide, transparent: true, opacity: 0 });
-        videoMesh = new THREE.Mesh(geometry, material);
+      <!-- BORDE DIFUMINADO (Glow) -->
+      <a-plane
+        id="glow"
+        width="1.25"
+        height="0.70"
+        position="0 0 -0.01"
+        material="color: #ffffff; opacity: 0.25; shader: flat; transparent: true;">
+      </a-plane>
 
-        videoMesh.position.y = 1.2;
-        videoMesh.scale.set(10, 10, 10);
+      <!-- VIDEO ORIGINAL -->
+      <a-video
+        id="videoPlane"
+        src="#vid"
+        width="1"
+        height="0.56"
+        position="0 0 0"
+        material="shader: flat;">
+      </a-video>
 
-        markerRoot.add(videoMesh);
-      }
+    </a-entity>
+  </a-marker>
 
-      function onResize() {
-        arToolkitSource.onResize();
-        arToolkitSource.copySizeTo(renderer.domElement);
-        if (arToolkitContext.arController !== null) {
-          arToolkitSource.copySizeTo(arToolkitContext.arController.canvas);
-        }
-      }
+  <a-entity id="camera" camera></a-entity>
+</a-scene>
 
-      function animate() {
-        requestAnimationFrame(animate);
+<script>
+  const startBtn = document.getElementById("startBtn");
+  const starter = document.getElementById("starter");
+  const video = document.getElementById("vid");
+  const marker = document.getElementById("marker");
+  const videoPlane = document.getElementById("videoPlane");
+  const container = document.getElementById("container");
+  const camera = document.getElementById("camera");
 
-        if (arToolkitSource.ready) {
-          arToolkitContext.update(arToolkitSource.domElement);
-        }
+  // Iniciar
+  startBtn.addEventListener("click", async () => {
+    starter.style.display = "none";
 
-        const dt = clock.getDelta();
+    try {
+      await video.play();
+      video.pause();
+    } catch (e) {}
+  });
 
-        if (markerRoot.visible) {
-          videoMesh.material.opacity = Math.min(videoMesh.material.opacity + dt * 2, 1);
-        } else {
-          videoMesh.material.opacity = Math.max(videoMesh.material.opacity - dt * 2, 0);
-        }
+  marker.addEventListener("markerFound", () => {
+    video.currentTime = 0;
+    video.play();
+    videoPlane.setAttribute("opacity", 1);
+  });
 
-        renderer.render(scene, camera);
-      }
-    </script>
-  </body>
+  marker.addEventListener("markerLost", () => {
+    video.pause();
+    videoPlane.setAttribute("opacity", 0);
+  });
+
+  // AUTO-SCALE
+  AFRAME.registerComponent("autoscale", {
+    tick: function () {
+      if (!marker.object3D.visible) return;
+
+      const markerPos = new THREE.Vector3();
+      const camPos = new THREE.Vector3();
+
+      marker.object3D.getWorldPosition(markerPos);
+      camera.object3D.getWorldPosition(camPos);
+
+      const distance = markerPos.distanceTo(camPos);
+
+      let scale = 10 / distance;
+
+      const maxScale = 3;
+      const minScale = 0.5;
+
+      scale = Math.min(maxScale, Math.max(minScale, scale));
+
+      container.setAttribute("scale", `${scale} ${scale} ${scale}`);
+    }
+  });
+
+  container.setAttribute("autoscale", "");
+</script>
+
+</body>
 </html>
