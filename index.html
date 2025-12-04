@@ -1,114 +1,114 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <meta charset="utf-8">
-  <title>Para ti</title>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ar-js-org@3.4.3/three.js/build/ar-threex.min.js"></script>
+    <style>
+      body, html {
+        margin: 0;
+        overflow: hidden;
+        background: black;
+      }
+      #videoElement {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <video id="videoElement" playsinline webkit-playsinline></video>
+    <script>
+      let scene, camera, renderer, clock;
+      let markerRoot, arToolkitSource, arToolkitContext;
+      let videoMesh;
 
-  <!-- A-Frame -->
-  <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+      init();
+      animate();
 
-  <!-- AR.js -->
-  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+      function init() {
+        scene = new THREE.Scene();
+        camera = new THREE.Camera();
+        scene.add(camera);
 
-  <style>
-    body { margin: 0; background: #000; }
+        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.body.appendChild(renderer.domElement);
 
-    #starter {
-      position: fixed; inset: 0;
-      background: #000;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-      color: #fff;
-    }
+        clock = new THREE.Clock();
 
-    #startBtn {
-      padding: 12px 18px;
-      background: #ff3366;
-      border: none;
-      border-radius: 10px;
-      color: #fff;
-      font-weight: bold;
-    }
+        arToolkitSource = new THREEx.ArToolkitSource({ sourceType: "webcam" });
+        arToolkitSource.init(function () {
+          setTimeout(() => onResize(), 500);
+        });
 
-    /* Fade suave del video */
-    #videoPlane {
-      transition: opacity 0.5s ease-in-out;
-      opacity: 0; /* inicia oculto */
-    }
-  </style>
-</head>
+        window.addEventListener("resize", onResize);
 
-<body>
+        arToolkitContext = new THREEx.ArToolkitContext({
+          cameraParametersUrl: "https://cdn.jsdelivr.net/npm/ar-js-org@3.4.3/three.js/data/camera_para.dat",
+          detectionMode: "mono",
+          maxDetectionRate: 60,
+        });
 
-<div id="starter">
-  <button id="startBtn">Hay tanto que quiero contarte...</button>
-  <p style="margin-top:10px; opacity:.7;">Apunta al collar bebé ❤️</p>
-</div>
+        arToolkitContext.init(function () {
+          camera.projectionMatrix.copy(arToolkitContext.getProjectionMatrix());
+        });
 
-<a-scene embedded vr-mode-ui="enabled:false" arjs="sourceType: webcam; debugUIEnabled: false;">
+        markerRoot = new THREE.Group();
+        scene.add(markerRoot);
 
-  <!-- ASSETS -->
-  <a-assets>
-    <video id="vid" src="video.mp4" preload="auto" loop playsinline webkit-playsinline crossorigin="anonymous"></video>
-  </a-assets>
+        let markerControls = new THREEx.ArMarkerControls(arToolkitContext, markerRoot, {
+          type: "pattern",
+          patternUrl: "pattern-marker.patt",
+          smooth: true,
+        });
 
-  <!-- MARKER -->
-  <a-marker type="pattern" url="pattern-marker.patt"
-            smooth="true" smoothCount="10" smoothTolerance="0.01" smoothThreshold="5">
+        const video = document.createElement("video");
+        video.src = "video.mp4"; // cambia a tu video final
+        video.autoplay = true;
+        video.loop = true;
+        video.muted = false;
+        video.playsinline = true;
 
-    <!-- contenedor AR -->
-    <a-entity rotation="-90 0 0">
+        const texture = new THREE.VideoTexture(video);
+        texture.minFilter = THREE.LinearFilter;
+        texture.magFilter = THREE.LinearFilter;
 
-      <!-- VIDEO - sin marco y sin partículas -->
-      <a-video
-        id="videoPlane"
-        src="#vid"
-        width="1"
-        height="0.56"
-        position="0 0 0"
-        material="shader: flat;">
-      </a-video>
+        const geometry = new THREE.PlaneGeometry(1, 0.56);
+        const material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide, transparent: true, opacity: 0 });
+        videoMesh = new THREE.Mesh(geometry, material);
 
-    </a-entity>
-  </a-marker>
+        videoMesh.position.y = 1.2;
+        videoMesh.scale.set(10, 10, 10);
 
-  <a-entity camera></a-entity>
-</a-scene>
+        markerRoot.add(videoMesh);
+      }
 
-<script>
-  const startBtn = document.getElementById("startBtn");
-  const starter = document.getElementById("starter");
-  const video = document.getElementById("vid");
-  const marker = document.querySelector("a-marker");
-  const videoPlane = document.querySelector("#videoPlane");
+      function onResize() {
+        arToolkitSource.onResize();
+        arToolkitSource.copySizeTo(renderer.domElement);
+        if (arToolkitContext.arController !== null) {
+          arToolkitSource.copySizeTo(arToolkitContext.arController.canvas);
+        }
+      }
 
-  // Activar permisos del video
-  startBtn.addEventListener("click", async () => {
-    starter.style.display = "none";
+      function animate() {
+        requestAnimationFrame(animate);
 
-    // Hack para desbloquear reproducción en iPhone
-    try {
-      await video.play();
-      video.pause();
-    } catch (e) {}
-  });
+        if (arToolkitSource.ready) {
+          arToolkitContext.update(arToolkitSource.domElement);
+        }
 
-  // Cuando encuentra el marcador
-  marker.addEventListener("markerFound", () => {
-    video.currentTime = 0;
-    video.play();
-    videoPlane.setAttribute("opacity", 1);  // Fade in
-  });
+        const dt = clock.getDelta();
 
-  // Cuando pierde el marcador
-  marker.addEventListener("markerLost", () => {
-    video.pause();
-    videoPlane.setAttribute("opacity", 0); // Fade out
-  });
-</script>
+        if (markerRoot.visible) {
+          videoMesh.material.opacity = Math.min(videoMesh.material.opacity + dt * 2, 1);
+        } else {
+          videoMesh.material.opacity = Math.max(videoMesh.material.opacity - dt * 2, 0);
+        }
 
-</body>
+        renderer.render(scene, camera);
+      }
+    </script>
+  </body>
 </html>
