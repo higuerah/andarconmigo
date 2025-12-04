@@ -43,7 +43,7 @@
 <body>
 
 <div id="starter">
-  <button id="startBtn">Hay tanto que quiero contarte...</button>
+  <button id="startBtn">Hay tantas cosas que quiero contarte...</button>
   <p style="margin-top:10px; opacity:.7;">Apunta al collar bebé ❤️</p>
 </div>
 
@@ -54,34 +54,22 @@
   </a-assets>
 
   <!-- MARCADOR -->
-  <a-marker id="marker" type="pattern" url="pattern-marker.patt"
-            smooth="true" smoothCount="10" smoothTolerance="0.01" smoothThreshold="5">
+  <a-marker id="marker" type="pattern" url="pattern-marker.patt">
 
-    <a-entity id="container" rotation="-90 0 0">
+    <!-- VIDEO GRANDE TAMAÑO FIJO -->
+    <a-video
+      id="videoPlane"
+      src="#vid"
+      width="4"
+      height="2.25"
+      position="0 0 0"
+      rotation="-90 0 0"
+      material="shader: flat;">
+    </a-video>
 
-      <!-- BORDE DIFUMINADO (Glow) -->
-      <a-plane
-        id="glow"
-        width="1.25"
-        height="0.70"
-        position="0 0 -0.01"
-        material="color: #ffffff; opacity: 0.25; shader: flat; transparent: true;">
-      </a-plane>
-
-      <!-- VIDEO ORIGINAL -->
-      <a-video
-        id="videoPlane"
-        src="#vid"
-        width="1"
-        height="0.56"
-        position="0 0 0"
-        material="shader: flat;">
-      </a-video>
-
-    </a-entity>
   </a-marker>
 
-  <a-entity id="camera" camera></a-entity>
+  <a-entity camera></a-entity>
 </a-scene>
 
 <script>
@@ -90,10 +78,7 @@
   const video = document.getElementById("vid");
   const marker = document.getElementById("marker");
   const videoPlane = document.getElementById("videoPlane");
-  const container = document.getElementById("container");
-  const camera = document.getElementById("camera");
 
-  // Iniciar
   startBtn.addEventListener("click", async () => {
     starter.style.display = "none";
 
@@ -113,32 +98,6 @@
     video.pause();
     videoPlane.setAttribute("opacity", 0);
   });
-
-  // AUTO-SCALE
-  AFRAME.registerComponent("autoscale", {
-    tick: function () {
-      if (!marker.object3D.visible) return;
-
-      const markerPos = new THREE.Vector3();
-      const camPos = new THREE.Vector3();
-
-      marker.object3D.getWorldPosition(markerPos);
-      camera.object3D.getWorldPosition(camPos);
-
-      const distance = markerPos.distanceTo(camPos);
-
-      let scale = 10 / distance;
-
-      const maxScale = 3;
-      const minScale = 0.5;
-
-      scale = Math.min(maxScale, Math.max(minScale, scale));
-
-      container.setAttribute("scale", `${scale} ${scale} ${scale}`);
-    }
-  });
-
-  container.setAttribute("autoscale", "");
 </script>
 
 </body>
