@@ -2,10 +2,13 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>AR Video Escalable</title>
+    <title>AR Video Collar</title>
 
-    <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+    <!-- A-Frame -->
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+
+    <!-- AR.js -->
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
 
     <style>
         #starter {
@@ -17,9 +20,20 @@
             justify-content: center;
             z-index: 9999;
         }
-        button {
-            padding: 15px 25px;
+
+        #startBtn {
+            padding: 16px 24px;
+            border: none;
+            background: #ff0055;
+            color: white;
+            border-radius: 10px;
             font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        #startBtn:hover {
+            background: #d40048;
         }
     </style>
 </head>
@@ -27,60 +41,94 @@
 <body>
 
 <div id="starter">
-    <button id="startBtn">Apunta al corazón bebé ❤️</button>
+    <button id="startBtn">Toca para iniciar la experiencia 💖</button>
 </div>
 
-<a-scene
-    embedded
-    arjs="sourceType: webcam; detectionMode: mono; patternRatio: 0.90;">
-    
+<a-scene 
+    embedded 
+    vr-mode-ui="enabled: false"
+    renderer="logarithmicDepthBuffer: true;"
+    arjs="sourceType: webcam; debugUIEnabled: false;"
+>
+
+    <!-- ASSETS -->
     <a-assets>
-        <video id="vid" src="video.mp4"
-               preload="auto" webkit-playsinline playsinline></video>
+        <video id="vid" src="video.mp4" preload="auto" playsinline webkit-playsinline></video>
     </a-assets>
 
-    <!-- El marcador controla el tamaño. NO fijamos dimensiones absolutas aquí -->
-    <a-marker
-        type="pattern"
-        url="pattern-marker.patt">
-        
-        <!-- Contenedor que escala con el marcador -->
-        <a-entity id="videoContainer" scale="1 1 1">
+    <!-- MARCADOR -->
+    <a-marker 
+        type="pattern" 
+        url="pattern-marker.patt"
+        smooth="true"
+        smoothCount="10"
+        smoothTolerance="0.01"
+        smoothThreshold="5"
+    >
+
+        <!-- CONTENEDOR PRINCIPAL (auto escala según distancia) -->
+        <a-entity id="container" scale="1 1 1">
+
+            <!-- MARCO ELEGANTE -->
+            <a-plane 
+                width="1.4" 
+                height="0.9"
+                color="#8B0000"
+                position="0 0 0"
+                material="shader: flat;"
+            ></a-plane>
+
+            <!-- VIDEO -->
             <a-video 
+                id="videoPlane"
                 src="#vid"
-                rotation="-90 0 0"
-                position="0 0 0">
-            </a-video>
+                width="1.28" 
+                height="0.72"
+                position="0 0 0.01"
+                material="shader: flat;"
+            ></a-video>
+
+            <!-- PARTÍCULAS ALREDEDOR -->
+            <a-entity 
+                position="0 0 0.05"
+                particle-system="
+                    preset: dust;
+                    particleCount: 2500;
+                    size: 0.02;
+                    maxAge: 2;
+                    opacity: 0.7;
+                    color: #ff3366, #ffd1e1;
+                    randomize: true;
+                "
+            ></a-entity>
+
         </a-entity>
 
     </a-marker>
 
     <a-entity camera></a-entity>
+
 </a-scene>
 
 <script>
-    const btn = document.querySelector('#startBtn');
-    const overlay = document.querySelector('#starter');
-    const video = document.querySelector('#vid');
-    const marker = document.querySelector('a-marker');
+    const btn = document.getElementById("startBtn");
+    const overlay = document.getElementById("starter");
+    const video = document.getElementById("vid");
 
-    // Evita autoplay hasta que detecte marcador
-    video.pause();
-    video.muted = false;
-
-    btn.addEventListener('click', async () => {
+    // Necesario para desbloquear audio en iOS
+    btn.addEventListener("click", () => {
         overlay.style.display = "none";
-        try { await video.play(); video.pause(); } catch(e){}
+        video.pause(); // aseguramos que no arranque autoforce
     });
 
-    // Cuando aparece el marcador → play
-    marker.addEventListener('markerFound', () => {
-        video.currentTime = 0; 
+    // Detecta marcador
+    const marker = document.querySelector("a-marker");
+
+    marker.addEventListener("markerFound", () => {
         video.play();
     });
 
-    // Cuando se pierde el marcador → pausa
-    marker.addEventListener('markerLost', () => {
+    marker.addEventListener("markerLost", () => {
         video.pause();
     });
 </script>
